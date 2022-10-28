@@ -1,5 +1,5 @@
 import sys
-sys.path.append("helios-server/")
+sys.path.append("../../helios-server/")
 import helios.models as models
 from helios_auth import models as auth_models
 from helios.models import CastVote, Voter
