@@ -6,6 +6,8 @@ GAE
 Ben Adida
 (ben@adida.net)
 """
+import django
+django.setup()
 from django.db import models
 
 from .auth_systems import can_check_constraint, AUTH_SYSTEMS
