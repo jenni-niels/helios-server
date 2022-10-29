@@ -21,6 +21,7 @@ def main(num_voters, num_questions, num_choices, output_suffix=""):
     if output_suffix:
         output_file += f"_{output_suffix}"
     output_file += ".csv"
+    print(f"Saving results to {output_file}:")
     if not os.path.exists(output_file):
         with open(output_file, "a") as f:
             f.write("encrypt_time,tally_time,decrypt_time,total_time\n")
@@ -81,7 +82,7 @@ def main(num_voters, num_questions, num_choices, output_suffix=""):
     f.close()
 
     # Decrypt the computed tally
-    print("Decrypting...")
+    print("Decrypting...", end="")
     tic = time.perf_counter()
     election.helios_trustee_decrypt()
     election.combine_decryptions()
@@ -91,6 +92,7 @@ def main(num_voters, num_questions, num_choices, output_suffix=""):
     with open(output_file, "a") as f:
         f.write(f"{decrypt_time:0.3f},{total_time:0.3f}\n")
     f.close()
+    print(" Done!")
     return
 
 if __name__=="__main__":
