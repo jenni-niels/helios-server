@@ -4,110 +4,82 @@ import helios.models as models
 from helios_auth import models as auth_models
 from helios.models import CastVote, Voter
 from helios.workflows.homomorphic import EncryptedVote
+from election_utils import *
+import pandas as pd
 import time
-import uuid
 
 
-# Load a user (right now it's Ben, maybe could change?)
+# Load a user to be the admin (right now it's Ben, maybe could change?)
 ben = auth_models.User.objects.get(user_id='ben@adida.net',
                                    user_type='google')
 
 
 # Getting a pre-made election.
-# This might be fully run and tallied/decrypted
+# This might be fully run and tallied/decrypted, so we'll reset things below
 election, _ = models.Election.get_or_create(short_name='my_test',
                                             name='My Test',
                                             description='Please let this work....',
                                             admin=ben)
 
-
-# ...generate some trustees:
+# ...generate some trustees (unnecessary to do again for 'my_test'):
 # election.generate_trustee(views.ELGAMAL_PARAMS)
 
-def election_info(election):
-    print(f"Election: {election.name}")
-    print(f" -- Num Trustees: {election.num_trustees}")
-    print(f" -- Num Voters: {election.num_voters}")
-    print(f" -- Num Votes: {election.num_cast_votes}")
-    return
-
-def delete_all_voters(election):
-    for v in Voter.get_by_election(election):
-        v.delete()
-    return
-
-def add_voters(election, num_voters):
-    for v in range(1, num_voters+1):
-        try: # see if there's already a user with this id
-            user = auth_models.User.get_by_type_and_id(user_type='password',
-                                                       user_id=f'testuser{v}')
-        except: # otherwise make a new user
-            user = auth_models.User(user_type='password',
-                                    user_id=f'testuser{v}')
-            user.save()
-        voter = Voter(uuid=str(uuid.uuid1()), user=user, election=election)
-        voter.save()
-    return
-
-# Check the status of the election we loaded in:
-election_info(election)
-
-# Remove all voters from the election:
+# Remove all voters from the election and strip out the questions:
 delete_all_voters(election)
-election_info(election)
+reset_questions(election)
 
 # Add voters to the election
-N = 10
+N = 1
 add_voters(election, N)
-election_info(election)
 
 # ...add some questions to the ballot:
-questions = [{"answer_urls":[None, None, None],
-              "answers": ["A", "B", "C"],
-              "choice_type": "approval",
-              "max": 1,
-              "min": 1,
-              "question": "A, B, or C?",
-              "result_type": "absolute",
-              "short_name": "W?",
-              "tally_type": "homomorphic",
-             }]
+num_questions = 2
+num_choices = 4
+questions = generate_questions(num_questions, num_choices)
 election.save_questions_safely(questions)
-# print(election.questions)
-# ...freeze the election:
+
+# ...freeze the election (unecessary to do again for 'my_test'):
 # election.freeze()
 
-# ...prepare at least one vote:
-# The length of the outer list is how many ballot questions exist in the election
-# For each ballot question, we have an inner list with the indices of the selected
-# answers to that question. This one shows that there was one question, and the
-# voter selected the answer in index 2 (in this case, 'C').
-print("Encrypting vote...")
-vote = EncryptedVote.fromElectionAndAnswers(election, [[2]])
-assert vote.verify(election)
-
-# ...store a cast vote with a registered voter, hence applying it to the election
-voter = Voter.get_by_user(ben)[0] # possibly some better ways to do this...
-print("Casting vote...")
-castvote = CastVote(vote=vote,
-                    vote_hash=vote.hash,
-                    voter=voter)
-voter.store_vote(castvote)
+tic = time.perf_counter()
+encrypting_time = 0
+asserting_time = 0
+storing_time = 0
+for voter in Voter.get_by_election(election):
+    print(f"For voter: {voter.voter_id}...")
+    answers = prepare_answers(num_questions, num_choices)
+    for q, answer in enumerate(answers):
+        print(f" -- Q{q}: {answers[q]}")
+    enc_tic = time.perf_counter()
+    vote = EncryptedVote.fromElectionAndAnswers(election, answers) # ~500ms
+    enc_toc = time.perf_counter()
+    assert vote.verify(election) # ~500ms
+    ass_toc = time.perf_counter()
+    castvote = CastVote(vote=vote, vote_hash=vote.hash, voter=voter)
+    voter.store_vote(castvote)
+    store_toc = time.perf_counter()
+    encrypting_time += enc_toc - enc_tic
+    asserting_time += ass_toc - enc_toc
+    storing_time += store_toc - ass_toc
+toc = time.perf_counter()
+voting_time = toc - tic
+print(f"Voting time: {voting_time:0.3f}s")
+print(f"Encrypting time: {encrypting_time:0.3f}s")
+print(f"Asserting time: {asserting_time:0.3f}s")
+print(f"Storing time: {storing_time:0.3f}s")
 
 # Compute the tally!
-print("Computing tally...")
 tic = time.perf_counter()
 election.compute_tally()
 toc = time.perf_counter()
 tally_time = toc - tic
-print(f"Tallying time: {tally_time:0.4f}s")
+print(f"Tallying time: {tally_time:0.3f}s")
 
 # Decrypt the computed tally
-print("Decrypting...")
 tic = time.perf_counter()
 election.helios_trustee_decrypt()
 election.combine_decryptions()
 toc = time.perf_counter()
 decrypt_time = toc - tic
+print(f"Decrypting time: {decrypt_time:0.3f}s")
 print(election.result)
-print(f"Decrypting time: {decrypt_time:0.4f}s")
