@@ -5,6 +5,7 @@ from helios_auth import models as auth_models
 from helios.models import CastVote, Voter
 from helios.workflows.homomorphic import EncryptedVote
 import time
+import uuid
 
 
 # Load a user (right now it's Ben, maybe could change?)
@@ -13,18 +14,52 @@ ben = auth_models.User.objects.get(user_id='ben@adida.net',
 
 
 # Getting a pre-made election.
-# This will actually be fully run and tallied/decrypted
+# This might be fully run and tallied/decrypted
 election, _ = models.Election.get_or_create(short_name='my_test',
                                             name='My Test',
                                             description='Please let this work....',
                                             admin=ben)
 
-# If this were a new election, we'd have to do the following...
-# ...register at least one voter in it:
-# models.Voter.register_user_in_election(user, election)
 
 # ...generate some trustees:
 # election.generate_trustee(views.ELGAMAL_PARAMS)
+
+def election_info(election):
+    print(f"Election: {election.name}")
+    print(f" -- Num Trustees: {election.num_trustees}")
+    print(f" -- Num Voters: {election.num_voters}")
+    print(f" -- Num Votes: {election.num_cast_votes}")
+    return
+
+def delete_all_voters(election):
+    for v in Voter.get_by_election(election):
+        v.delete()
+    return
+
+def add_voters(election, num_voters):
+    for v in range(1, num_voters+1):
+        try: # see if there's already a user with this id
+            user = auth_models.User.get_by_type_and_id(user_type='password',
+                                                       user_id=f'testuser{v}')
+        except: # otherwise make a new user
+            user = auth_models.User(user_type='password',
+                                    user_id=f'testuser{v}')
+            user.save()
+        voter = Voter(uuid=str(uuid.uuid1()), user=user, election=election)
+        voter.save()
+    return
+
+# Check the status of the election we loaded in:
+election_info(election)
+
+# Remove all voters from the election:
+delete_all_voters(election)
+election_info(election)
+
+# Add voters to the election
+N = 10
+add_voters(election, N)
+election_info(election)
 
 # ...add some questions to the ballot:
 questions = [{"answer_urls":[None, None, None],
@@ -37,8 +72,8 @@ questions = [{"answer_urls":[None, None, None],
               "short_name": "W?",
               "tally_type": "homomorphic",
              }]
-# election.save_questions_safely(questions)
-
+election.save_questions_safely(questions)
+# print(election.questions)
 # ...freeze the election:
 # election.freeze()
 
