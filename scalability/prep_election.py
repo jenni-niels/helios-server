@@ -19,8 +19,9 @@ import os
 @click.option('--output_suffix', '-s', type=str)
 def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix=""):
     print(f'Creating Election with {num_questions} Questions, {num_choices} Choices, {num_trustees} Trustees, and {num_voters} Voters')
+    
     admin = auth_model.User.objects.create(user_type='google',user_id='admin@admin.com', info={'name':'Election Admin'})
-
+    
     # Getting a pre-made election.
     # This might be fully run and tallied/decrypted, so we'll reset things below
     election, _ = models.Election.get_or_create(short_name=f'election_{num_questions}_questions_{num_choices}_choices_{num_trustees}_trustees_{num_voters}_voters',
@@ -56,3 +57,6 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
     print(f"{encrypt_time:0.3f},")
 
     election.freeze()
+
+if __name__=="__main__":
+    main()
