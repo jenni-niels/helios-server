@@ -20,7 +20,7 @@ import os
 def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix=""):
     print(f'Creating Election with {num_questions} Questions, {num_choices} Choices, {num_trustees} Trustees, and {num_voters} Voters')
     
-    admin = auth_model.User.objects.get_or_create(user_type='google',user_id='admin@admin.com', info={'name':'Election Admin'})
+    admin, _ = auth_model.User.objects.get_or_create(user_type='google',user_id='admin@admin.com', info={'name':'Election Admin'})
     
     # Getting a pre-made election.
     # This might be fully run and tallied/decrypted, so we'll reset things below
@@ -43,6 +43,8 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
     questions = generate_questions(num_questions, num_choices)
     election.save_questions_safely(questions)
 
+    election.freeze()
+
     encrypt_time = 0
     print("Encrypting votes...")
     for voter in tqdm(Voter.get_by_election(election)):
@@ -55,8 +57,6 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
         voter.store_vote(castvote)
         encrypt_time += toc - tic
     print(f"{encrypt_time:0.3f},")
-
-    election.freeze()
 
 if __name__=="__main__":
     main()
