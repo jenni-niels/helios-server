@@ -20,7 +20,7 @@ import os
 def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix=""):
     print(f'Creating Election with {num_questions} Questions, {num_choices} Choices, {num_trustees} Trustees, and {num_voters} Voters')
     
-    admin = auth_model.User.objects.create(user_type='google',user_id='admin@admin.com', info={'name':'Election Admin'})
+    admin = auth_model.User.objects.get_or_create(user_type='google',user_id='admin@admin.com', info={'name':'Election Admin'})
     
     # Getting a pre-made election.
     # This might be fully run and tallied/decrypted, so we'll reset things below
