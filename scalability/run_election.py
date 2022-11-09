@@ -14,7 +14,7 @@ import os
 @click.option('--num_voters', '-v', type=int)
 @click.option('--num_questions', '-q', type=int)
 @click.option('--num_choices', '-c', type=int)
-@click.option('--num_trustees', '-t', type=int)
+@click.option('--num_trustees', '-t', type=int, default=1)
 @click.option('--output_suffix', '-s', type=str)
 def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix=""):
     os.makedirs("outputs/", exist_ok=True)
@@ -29,7 +29,8 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
         f.close()
 
     overall_tic = time.perf_counter()
-    election = models.Election.get_by_short_name(f'election_{num_questions}_questions_{num_choices}_choices_{num_trustees}_trustees_{num_voters}_voters')
+    short_name = f'election_{num_questions}_questions_{num_choices}_choices_{num_trustees}_trustees_{num_voters}_voters'
+    election = models.Election.get_by_short_name(short_name)
 
     # Compute the tally!
     print("Tallying...")
