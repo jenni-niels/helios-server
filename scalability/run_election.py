@@ -18,7 +18,7 @@ import os
 @click.option('--output_suffix', '-s', type=str)
 def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix=""):
     os.makedirs("outputs/", exist_ok=True)
-    output_file = f"results/{num_voters}V_{num_questions}Q_{num_choices}C_{num_trustees}T"
+    output_file = f"outputs/{num_voters}V_{num_questions}Q_{num_choices}C_{num_trustees}T"
     if output_suffix:
         output_file += f"_{output_suffix}"
     output_file += ".csv"
