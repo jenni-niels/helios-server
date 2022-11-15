@@ -28,7 +28,7 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
     print(f"Saving results to {output_file}:")
     if not os.path.exists(output_file):
         with open(output_file, "a") as f:
-            f.write("encrypt_time,tally_time,decrypt_time,total_time\n")
+            f.write("encrypt_time,tally_time,decrypt_time\n")
         f.close()
     
     admin, _ = auth_model.User.objects.get_or_create(user_type='google',user_id='admin@admin.com', info={'name':'Election Admin'})
