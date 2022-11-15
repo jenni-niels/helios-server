@@ -15,21 +15,36 @@ import os
 @click.option('--num_voters', '-v', type=int)
 @click.option('--num_questions', '-q', type=int)
 @click.option('--num_choices', '-c', type=int)
-# @click.option('--num_trustees', '-t', type=int)
+@click.option('--num_trustees', '-t', type=int, default=1)
 @click.option('--output_suffix', '-s', type=str)
 def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix=""):
     print(f'Creating Election with {num_questions} Questions, {num_choices} Choices, {num_trustees} Trustees, and {num_voters} Voters')
+
+    os.makedirs("outputs/", exist_ok=True)
+    output_file = f"outputs/{num_voters}V_{num_questions}Q_{num_choices}C"
+    if output_suffix:
+        output_file += f"_{output_suffix}"
+    output_file += ".csv"
+    print(f"Saving results to {output_file}:")
+    if not os.path.exists(output_file):
+        with open(output_file, "a") as f:
+            f.write("encrypt_time,tally_time,decrypt_time,total_time\n")
+        f.close()
     
     admin, _ = auth_model.User.objects.get_or_create(user_type='google',user_id='admin@admin.com', info={'name':'Election Admin'})
     
     # Getting a pre-made election.
     # This might be fully run and tallied/decrypted, so we'll reset things below
-    election, _ = models.Election.get_or_create(short_name=f'election_{num_questions}_questions_{num_choices}_choices_{num_trustees}_trustees_{num_voters}_voters',
+    short_name = f'election_{num_questions}_questions_{num_choices}_choices_{num_trustees}_trustees_{num_voters}_voters'
+    election, _ = models.Election.get_or_create(short_name=short_name,
                                                 name=f'Election with {num_questions} Questions, {num_choices} Choices, {num_trustees} Trustees, and {num_voters} Voters',
                                                 admin=admin)
 
     if election.frozen_at is not None:
-        print("Election With theses specifications already exits")
+        print("Election with this specification already exists")
+        with open(output_file, "a") as f:
+            f.write(f",")
+        f.close()
         exit()
 
     ## Currently only support 1.
@@ -56,7 +71,8 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
         castvote = CastVote(vote=vote, vote_hash=vote.hash, voter=voter)
         voter.store_vote(castvote)
         encrypt_time += toc - tic
-    print(f"{encrypt_time:0.3f},")
-
+    with open(output_file, "a") as f:
+        f.write(f"{encrypt_time:0.3f},")
+    f.close()
 if __name__=="__main__":
     main()
