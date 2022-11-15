@@ -15,7 +15,7 @@ import os
 @click.option('--num_voters', '-v', type=int)
 @click.option('--num_questions', '-q', type=int)
 @click.option('--num_choices', '-c', type=int)
-@click.option('--num_trustees', '-t', type=int)
+# @click.option('--num_trustees', '-t', type=int)
 @click.option('--output_suffix', '-s', type=str)
 def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix=""):
     print(f'Creating Election with {num_questions} Questions, {num_choices} Choices, {num_trustees} Trustees, and {num_voters} Voters')
@@ -32,8 +32,8 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
         print("Election With theses specifications already exits")
         exit()
 
-    ## Cu
-    for _ in range(num_trustees):
+    ## Currently only support 1.
+    for i in range(num_trustees):
         election.generate_trustee(views.ELGAMAL_PARAMS)
     
     # Add voters to the election
