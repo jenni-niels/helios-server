@@ -47,8 +47,8 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
         f.close()
         exit()
 
-    ## Cu
-    for _ in range(num_trustees):
+    ## Currently only support 1.
+    for i in range(num_trustees):
         election.generate_trustee(views.ELGAMAL_PARAMS)
     
     # Add voters to the election

@@ -410,13 +410,13 @@ class Election(HeliosModel):
   def ready_for_tallying(self):
     return datetime.datetime.utcnow() >= self.tallying_starts_at
 
-  def compute_tally(self):
+  def compute_tally(self, verify_p):
     """
     tally the election, assuming votes already verified
     """
     tally = self.init_tally()
     for voter in self.voter_set.exclude(vote=None):
-      tally.add_vote(voter.vote, verify_p=False)
+      tally.add_vote(voter.vote, verify_p=verify_p)
 
     self.encrypted_tally = tally
     self.save()    
