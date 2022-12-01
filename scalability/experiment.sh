@@ -1,9 +1,9 @@
-v=200
-q=4
+v=10
+q=2
 c=4
 
-python -m cProfile -o 200V_4Q_4C_test_enc_verify.prof prep_election.py -v $v -q $q -c $c -s test_verify
-python -m cProfile -o 200V_4Q_4C_test_verify.prof run_election.py -v $v -q $q -c $c -s test_verify
+# python -m cProfile -o 200V_4Q_4C_test_enc_verify.prof prep_election.py -v $v -q $q -c $c -s test_verify
+python run_election.py -v $v -q $q -c $c -s test_debug
 
 
 # for _ in 1 2 3 4 5

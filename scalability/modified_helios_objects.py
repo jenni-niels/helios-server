@@ -2,12 +2,12 @@ import sys
 sys.path.append("../../helios-server/")
 import logging
 from helios.crypto import algs
-from helios.workflows.homomorphic import DLogTable, EncryptedAnswer
+from helios.workflows.homomorphic import DLogTable, EncryptedAnswer, EncryptedVote
 
 class OurTally():
-    @property
-    def datatype(self):
-        return "legacy/Tally"
+    # @property
+    # def datatype(self):
+    #     return "legacy/Tally"
     
     def __init__(self, *args, **kwargs):
         super(OurTally, self).__init__()
@@ -155,7 +155,6 @@ class OurTally():
         # pre-compute a dlog table
         dlog_table = DLogTable(base = public_key.g, modulus = public_key.p)
         dlog_table.precompute(self.num_tallied)
-        print(dlog_table)
 
         result = []
 
@@ -167,7 +166,8 @@ class OurTally():
                 # coalesce the decryption factors into one list
                 dec_factor_list = [df[q_num][a_num] for df in decryption_factors]
                 raw_value = self.tally[q_num][a_num].decrypt(dec_factor_list, public_key)
-
+                # raw_value = public_key.g
+                print(q_num, a_num, dlog_table.lookup(raw_value))
                 q_result.append(dlog_table.lookup(raw_value))
 
             result.append(q_result)
@@ -181,6 +181,11 @@ class OurTally():
     def _process_value_out(self, field_name, field_value):
         if field_name == 'tally':
             return [[a.toJSONDict() for a in q] for q in field_value]   
+
+def generateFromAnswers(encrypted_answers):
+    return_val = EncryptedVote()
+    return_val.encrypted_anwers = encrypted_answers
+    return return_val
 
 class OurEncryptedVote():
   """
@@ -254,11 +259,13 @@ class OurEncryptedVote():
     return return_val
 
 # TODO: fix typos, maybe clean up some stuf
-def fromAnswer(choice_indicies, answer, pk, q_max, q_min=0):
+def fromAnswer(choice_indicies, answer, pk, q_max):
     """
     Given an election, a question number, and a list of answers to that question
     in the form of an array of 0-based indexes into the answer array,
     produce an EncryptedAnswer that works.
+    choice_indicies is like answers in Helios, its all possible answers
+    answer is like answer_indexes in Helios, list of indices of the actual choice/vote of the
     """
     
     # initialize choices, individual proofs, randomness and overall proof
@@ -279,7 +286,7 @@ def fromAnswer(choice_indicies, answer, pk, q_max, q_min=0):
 
     # min and max for number of answers, useful later
 
-    min_answers = q_min
+    min_answers = 0
     max_answers = q_max
 
     # go through each possible answer and encrypt either a g^0 or a g^1.
