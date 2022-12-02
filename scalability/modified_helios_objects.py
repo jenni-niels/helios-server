@@ -208,53 +208,53 @@ class OurEncryptedVote():
   answers = property(_answers_get, _answers_set)
 
     # TODO: refactor to do this without passing the election explicitly
-#   def verify(self, election):
-#     # correct number of answers
-#     # noinspection PyUnresolvedReferences
-#     n_answers = len(self.encrypted_answers) if self.encrypted_answers is not None else 0
-#     n_questions = len(election.questions) if election.questions is not None else 0
-#     if n_answers != n_questions:
-#       logging.error(f"Incorrect number of answers ({n_answers}) vs questions ({n_questions})")
-#       return False
+  def verify(self, election):
+    # correct number of answers
+    # noinspection PyUnresolvedReferences
+    n_answers = len(self.encrypted_answers) if self.encrypted_answers is not None else 0
+    n_questions = len(election.questions) if election.questions is not None else 0
+    if n_answers != n_questions:
+      logging.error(f"Incorrect number of answers ({n_answers}) vs questions ({n_questions})")
+      return False
 
-#     # check hash
-#     # noinspection PyUnresolvedReferences
-#     our_election_hash = self.election_hash if isinstance(self.election_hash, str) else self.election_hash.decode()
-#     actual_election_hash = election.hash if isinstance(election.hash, str) else election.hash.decode()
-#     if our_election_hash != actual_election_hash:
-#       logging.error(f"Incorrect election_hash {our_election_hash} vs {actual_election_hash} ")
-#       return False
+    # check hash
+    # noinspection PyUnresolvedReferences
+    our_election_hash = self.election_hash if isinstance(self.election_hash, str) else self.election_hash.decode()
+    actual_election_hash = election.hash if isinstance(election.hash, str) else election.hash.decode()
+    if our_election_hash != actual_election_hash:
+      logging.error(f"Incorrect election_hash {our_election_hash} vs {actual_election_hash} ")
+      return False
 
-#     # check ID
-#     # noinspection PyUnresolvedReferences
-#     our_election_uuid = self.election_uuid if isinstance(self.election_uuid, str) else self.election_uuid.decode()
-#     actual_election_uuid = election.uuid if isinstance(election.uuid, str) else election.uuid.decode()
-#     if our_election_uuid != actual_election_uuid:
-#       logging.error(f"Incorrect election_uuid {our_election_uuid} vs {actual_election_uuid} ")
-#       return False
+    # check ID
+    # noinspection PyUnresolvedReferences
+    our_election_uuid = self.election_uuid if isinstance(self.election_uuid, str) else self.election_uuid.decode()
+    actual_election_uuid = election.uuid if isinstance(election.uuid, str) else election.uuid.decode()
+    if our_election_uuid != actual_election_uuid:
+      logging.error(f"Incorrect election_uuid {our_election_uuid} vs {actual_election_uuid} ")
+      return False
 
-#     # check proofs on all of answers
-#     for question_num in range(len(election.questions)):
-#       ea = self.encrypted_answers[question_num]
-
-#       question = election.questions[question_num]
-#       min_answers = 0
-#       if 'min' in question:
-#         min_answers = question['min']
+    # check proofs on all of answers
+    for question_num in range(len(election.questions)):
+      ea = self.encrypted_answers[question_num]
+    #   print("ea.__dict__ is", ea.__dict__)
+      question = election.questions[question_num]
+      min_answers = 0
+      if 'min' in question:
+        min_answers = question['min']
         
-#       if not ea.verify(election.public_key, min=min_answers, max=question['max']):
-#         return False
+      if not ea.verify(election.public_key, min=min_answers, max=question['max']):
+        return False
         
-#     return True
+    return True
     
   @classmethod
-  def fromAnswers(cls, hash, answers):
+  def fromAnswers(cls, election, answers):
     # each answer is an index into the answer array
     encrypted_answers = answers
     return_val = cls()
     return_val.encrypted_answers = encrypted_answers
-    return_val.election_hash = hash
-    return_val.election_uuid = None #election.uuid
+    return_val.election_hash = election.hash
+    return_val.election_uuid = election.uuid
 
     return return_val
 
@@ -321,9 +321,11 @@ def fromAnswer(choice_indicies, answer, pk, q_max):
       sum_plaintexts = EncryptedAnswer.generate_plaintexts(pk, min=min_answers, max=max_answers)
     
       # need to subtract the min from the offset
+    #   print("Did we do this?")
       overall_proof = homomorphic_sum.generate_disjunctive_encryption_proof(sum_plaintexts, num_selected_answers - min_answers, randomness_sum, algs.EG_disjunctive_challenge_generator);
     else:
       # approval voting
       overall_proof = None
+    # print(overall_proof)
     
     return EncryptedAnswer(choices, individual_proofs, overall_proof, randomness, answer)

@@ -4,6 +4,7 @@ import helios.models as models
 from helios_auth import models as auth_models
 from helios.models import CastVote, Voter, Trustee
 from helios.workflows.homomorphic import EncryptedVote
+from helios_auth import models as auth_model
 from election_utils import *
 from tqdm import tqdm
 import click
@@ -29,7 +30,14 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
         f.close()
 
     short_name = f'election_{num_questions}_questions_{num_choices}_choices_{num_trustees}_trustees_{num_voters}_voters'
-    election = models.Election.get_by_short_name(short_name)
+    admin, _ = auth_model.User.objects.get_or_create(user_type='google',user_id='admin@admin.com', info={'name':'Election Admin'})
+    election, _ = models.Election.get_or_create(short_name=short_name,
+                                                name=f'Election with {num_questions} Questions, {num_choices} Choices, {num_trustees} Trustees, and {num_voters} Voters',
+                                                admin=admin)
+    print(election.id)
+    print("now election hash is: ", election.hash)
+    # election.hash = "hghD9wfvvR1YkQQLNFPupr/fyJyFzNQly5Kdd0XTPfw"
+    # print("now election hash is: ", election.hash)
 
     # Compute the tally!
     print("Tallying...")
@@ -47,6 +55,7 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
     election.helios_trustee_decrypt()
     election.combine_decryptions()
     print(f"Decryption Verifies: {[t.verify_decryption_proofs() for t in Trustee.get_by_election(election)]}")
+    print(election.result)
     toc = time.perf_counter()
     decrypt_time = toc - tic
     with open(output_file, "a") as f:
