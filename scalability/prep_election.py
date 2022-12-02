@@ -5,8 +5,11 @@ from helios_auth import models as auth_model
 from helios.models import CastVote, Voter
 import helios.views as views
 from helios.workflows.homomorphic import EncryptedVote
+from modified_helios_objects import OurEncryptedVote
 from election_utils import *
 from tqdm import tqdm
+import numpy as np
+import pickle
 import click
 import time
 import os
@@ -54,21 +57,39 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
     # Add voters to the election
     add_voters(election, num_voters)
 
+
     # ...add some questions to the ballot:
     questions = generate_questions(num_questions, num_choices)
     election.save_questions_safely(questions)
 
     election.freeze()
 
+    # Make the public key the same as the election on which we precomputed the encrypted votes
+    election_keypair = pickle.load(open("election_keypair.p", "rb"))
+    old_pk = election.public_key
+    election.public_key = election_keypair['public_key']
+    new_pk = election.public_key
+    assert old_pk != new_pk
+
+    # Make the use the same election hash (line 89) as the precomputed encrypted votes, I think (see extracting_crypto.ipynb)
+    precomputed_hash = '52dVuxvPgNzorVKOS4c4duwrpVckhHGst79IUgejOEU'
+    # election.hash = precomputed_hash
+    # print(election.hash)
+
+    # We also might need to make the decryption factors align? but the decryption passes...
+
     encrypt_time = 0
+    all_encrypted_answers = np.load(f"encrypted_answers/all_answers_with_{num_choices}_choices.npy",  allow_pickle=True)
     print("Encrypting votes...")
     for voter in tqdm(Voter.get_by_election(election)):
-        answers = prepare_answers(num_questions, num_choices)
+        # answers = prepare_answers(num_questions, num_choices)
+        answers = [np.random.choice(all_encrypted_answers) for _ in range(num_questions)]
         tic = time.perf_counter()
-        vote = EncryptedVote.fromElectionAndAnswers(election, answers)
+        # vote = EncryptedVote.fromElectionAndAnswers(election, answers)
+        vote = OurEncryptedVote.fromAnswers(precomputed_hash, answers)
         toc = time.perf_counter()
         # assert vote.verify(election)
-        castvote = CastVote(vote=vote, vote_hash=vote.hash, voter=voter)
+        castvote = CastVote(vote=vote, vote_hash=election.hash, voter=voter)
         voter.store_vote(castvote)
         encrypt_time += toc - tic
     with open(output_file, "a") as f:

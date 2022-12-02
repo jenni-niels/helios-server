@@ -248,12 +248,12 @@ class OurEncryptedVote():
 #     return True
     
   @classmethod
-  def fromAnswers(cls, answers):
+  def fromAnswers(cls, hash, answers):
     # each answer is an index into the answer array
     encrypted_answers = answers
     return_val = cls()
     return_val.encrypted_answers = encrypted_answers
-    return_val.election_hash = None #election.hash
+    return_val.election_hash = hash
     return_val.election_uuid = None #election.uuid
 
     return return_val

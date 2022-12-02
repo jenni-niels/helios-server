@@ -30,7 +30,6 @@ def main(num_voters, num_questions, num_choices, num_trustees=1, output_suffix="
 
     short_name = f'election_{num_questions}_questions_{num_choices}_choices_{num_trustees}_trustees_{num_voters}_voters'
     election = models.Election.get_by_short_name(short_name)
-    print(election.questions)
 
     # Compute the tally!
     print("Tallying...")
