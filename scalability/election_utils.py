@@ -65,3 +65,10 @@ def prepare_answers(num_questions, num_choices):
         # number_answers_selected
         answers.append(random.sample(possible_answers, number_answers_selected))
     return answers
+
+def generate_possible_answers(num_choices):
+    possible_answers = []
+    choices = [i for i in range(num_choices)]
+    for i in range(num_choices+1):
+        possible_answers.extend([list(xs) for xs in combinations(choices, i)])
+    return possible_answers
