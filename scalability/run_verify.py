@@ -4,7 +4,6 @@ sys.path.append("..")
 import helios.models as models
 from helios_auth import models as auth_model
 import helios.views as views
-from itertools import combinations
 from election_utils import generate_questions, add_voters, generate_possible_answers
 from helios.models import Voter
 from helios.workflows.homomorphic import EncryptedVote

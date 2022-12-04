@@ -2,6 +2,7 @@ import sys
 sys.path.append("../../helios-server/")
 import helios.models as models
 from helios_auth import models as auth_models
+from itertools import combinations
 from helios.models import Voter
 import random
 import uuid
