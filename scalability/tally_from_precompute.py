@@ -76,7 +76,7 @@ def main(num_questions, num_choices, num_voters):
         f.write(f"{tally_time:0.3f},")
 
 
-    print("Decrypting...", end="")
+    print("Decrypting...")
     tic = time.perf_counter()
     result = decrypt_and_prove(tally, keys.sk)
     toc = time.perf_counter()
